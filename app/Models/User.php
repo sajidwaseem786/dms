@@ -7,16 +7,18 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
 
     protected $fillable = [
         'name',
         'email',
         'password',
         'role',
+        'email_verified_at'
     ];
 
     protected $hidden = [
@@ -32,26 +34,26 @@ class User extends Authenticatable implements FilamentUser
         ];
     }
 
-public function canAccessPanel(Panel $panel): bool
-{
-    \Log::info('canAccessPanel check', [
-        'panel_id' => $panel->getId(),
-        'user_email' => $this->email,
-        'user_role' => $this->role,
-    ]);
+    public function canAccessPanel(Panel $panel): bool
+    {
+        \Log::info('canAccessPanel check', [
+            'panel_id' => $panel->getId(),
+            'user_email' => $this->email,
+            'user_role' => $this->hasRole('admin'),
+        ]);
 
-    // Landlord panel - allow any authenticated user
-    if ($panel->getId() === 'admin') {
-        return true; // ✅ No role check for landlord
+        // Landlord panel - allow any authenticated user
+        if ($panel->getId() === 'admin') {
+            return true; // ✅ No role check for landlord
+        }
+
+        // Tenant panel - require admin role
+        if ($panel->getId() === 'tenant') {
+            return $this->hasRole('admin');
+        }
+
+        return false;
     }
-
-    // Tenant panel - require admin role
-    if ($panel->getId() === 'tenant') {
-        return isset($this->role) && $this->role === 'admin';
-    }
-
-    return false;
-}
 
     /**
      * Override newQuery to use the correct connection based on context
@@ -90,5 +92,12 @@ public function canAccessPanel(Panel $panel): bool
 
         // Otherwise use landlord connection
         return 'landlord';
+    }
+    /**
+     * Relationship to VolunteerRegistrations
+     */
+    public function registrations()
+    {
+        return $this->hasMany(VolunteerRegistration::class);
     }
 }

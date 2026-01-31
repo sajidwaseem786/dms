@@ -29,8 +29,9 @@ class TenantPanelProvider extends PanelProvider
         return $panel
             ->id('tenant')
             ->path('admin')
-            ->login() 
+            ->login()
             ->authGuard('web')
+            ->default()
             ->colors([
                 'primary' => Color::Blue,
             ])
@@ -49,7 +50,7 @@ class TenantPanelProvider extends PanelProvider
                 InitializeTenancyByDomain::class,
                 PreventAccessFromCentralDomains::class,
                 \App\Http\Middleware\EnsureTenantDatabase::class,
-                
+
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,

@@ -17,23 +17,46 @@ class EventsTable
         return $table
             ->columns([
                 TextColumn::make('title')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
+
                 TextColumn::make('location')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
+
                 TextColumn::make('start_date')
-                    ->dateTime()
+                    ->label('Start Date')
+                    ->date('d M Y')
                     ->sortable(),
+
+                TextColumn::make('start_time')
+                    ->label('Start Time')
+                    ->time('H:i'),
+
                 TextColumn::make('end_date')
-                    ->dateTime()
+                    ->label('End Date')
+                    ->date('d M Y')
                     ->sortable(),
+
+                TextColumn::make('end_time')
+                    ->label('End Time')
+                    ->time('H:i'),
+                    
                 BadgeColumn::make('status')
                     ->colors([
                         'warning' => 'draft',
                         'success' => 'published',
                         'danger' => 'closed',
-                    ]),
+                    ])
+                    ->sortable(),
+
                 TextColumn::make('created_at')
-                    ->dateTime()
+                    ->dateTime('d M Y H:i')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('updated_at')
+                    ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -45,13 +68,14 @@ class EventsTable
                         'closed' => 'Closed',
                     ]),
             ])
-            ->recordActions([
+            ->actions([
                 EditAction::make(),
             ])
-            ->toolbarActions([
+            ->bulkActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->defaultSort('start_date', 'desc');
     }
 }
