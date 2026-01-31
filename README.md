@@ -61,4 +61,7 @@ The Laravel framework is open-sourced software licensed under the [MIT license](
 ## Create new Tenant
 php artisan tenant:create "Acme Corporation" "admin@acme.com" "acme"
 
-php artisan tenant:create "Hesam Corporation" "Hesam@test.com" "Hesam"
+php artisan tenant:create "Sajid Corporation" "Sajid@test.com" "Sajid" //name, email, domain, 
+php artisan tenant:create "Sajid Corporation" "Sajid@test.com" "Sajid" --password="Test@123"; password(optinal)
+php artisan make:command RunTenantMigrations
+php artisan tenant:migrate-custom
