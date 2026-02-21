@@ -17,7 +17,13 @@ use Filament\Tables\Table;
 class EventResource extends Resource
 {
     protected static ?string $model = Event::class;
+    protected static ?string $navigationLabel = 'Activiteiten';
 
+    protected static ?string $modelLabel = 'Activiteit';
+
+    protected static ?string $pluralModelLabel = 'Activiteiten';
+    protected static ?string $recordTitleAttribute = 'Activiteit';
+    protected static string|\UnitEnum|null $navigationGroup = 'Planning';
     protected static string|BackedEnum|null $navigationIcon =
     Heroicon::OutlinedCalendar;
 

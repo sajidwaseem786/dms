@@ -2,13 +2,16 @@
 
 namespace App\Filament\Tenant\Resources\VolunteerRegistrations\Tables;
 
-use Filament\Tables\Table;
-use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\EditAction;
 use Filament\Tables\Columns\BadgeColumn;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Grouping\Group;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Carbon\Carbon;
 
 class VolunteerRegistrationsTable
 {
@@ -50,6 +53,15 @@ class VolunteerRegistrationsTable
                     ->dateTime('d M Y H:i')
                     ->sortable(),
             ])
+            ->defaultGroup(
+                Group::make('event.start_date')
+                    ->label('')
+                    ->getTitleFromRecordUsing(
+                        fn($record) =>
+                        'Week ' . Carbon::parse($record->event->start_date)->format('W')
+                    )
+                    ->collapsible()
+            )
             ->filters([
                 SelectFilter::make('status')
                     ->options([

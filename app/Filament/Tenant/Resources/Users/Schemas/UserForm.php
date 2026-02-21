@@ -41,8 +41,16 @@ class UserForm
                     ->required(fn(string $context) => $context === 'create')
                     ->hiddenOn('edit'),
 
+                Select::make('volunteerRoles')
+                    ->label('Job Categories')
+                    ->multiple()
+                    ->relationship('volunteerJobRoles', 'name')
+                    ->preload()
+                    ->searchable(),
+
                 Select::make('roles')
                     ->label('Role')
+                    ->multiple(true)
                     ->options(fn() => \App\Models\Role::pluck('name', 'name'))
                     ->required()
                     ->preload()
@@ -54,7 +62,6 @@ class UserForm
                             );
                         }
                     }),
-
             ]);
     }
 }

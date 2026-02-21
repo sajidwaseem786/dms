@@ -100,4 +100,11 @@ class User extends Authenticatable implements FilamentUser
     {
         return $this->hasMany(VolunteerRegistration::class);
     }
+    public function volunteerJobRoles()
+    {
+        return $this->belongsToMany(
+            VolunteerRole::class,
+            'user_volunteer_role'
+        );
+    }
 }
