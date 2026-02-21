@@ -9,12 +9,19 @@ class VolunteerRole extends Model
 {
     use HasFactory;
     protected $connection = 'mysql';
-    protected $fillable = ['name','description'];
+    protected $fillable = ['name', 'description'];
     /**
      * Relationship to EventRoles
      */
     public function eventRoles()
     {
         return $this->hasMany(EventRole::class);
+    }
+    public function users()
+    {
+        return $this->belongsToMany(
+            User::class,
+            'user_volunteer_role'
+        );
     }
 }

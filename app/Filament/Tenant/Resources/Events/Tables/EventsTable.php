@@ -2,13 +2,16 @@
 
 namespace App\Filament\Tenant\Resources\Events\Tables;
 
-use Filament\Tables\Table;
-use Filament\Actions\EditAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
-use Filament\Tables\Columns\TextColumn;
+use Filament\Actions\EditAction;
 use Filament\Tables\Columns\BadgeColumn;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Grouping\Group;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Carbon\Carbon;
 
 class EventsTable
 {
@@ -41,7 +44,7 @@ class EventsTable
                 TextColumn::make('end_time')
                     ->label('End Time')
                     ->time('H:i'),
-                    
+
                 BadgeColumn::make('status')
                     ->colors([
                         'warning' => 'draft',
@@ -60,6 +63,15 @@ class EventsTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultGroup(
+                Group::make('start_date')
+                    ->label('')
+                    ->getTitleFromRecordUsing(
+                        fn($record) =>
+                        'Week ' . Carbon::parse($record->start_date)->format('W')
+                    )
+                    ->collapsible()
+            )
             ->filters([
                 SelectFilter::make('status')
                     ->options([
@@ -76,6 +88,11 @@ class EventsTable
                     DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('start_date', 'desc');
+            ->defaultSort('start_date', 'desc')
+            ->modifyQueryUsing(
+                fn(Builder $query) =>
+                $query->whereDate('start_date', '>=', Carbon::today())
+            );
+        ;
     }
 }

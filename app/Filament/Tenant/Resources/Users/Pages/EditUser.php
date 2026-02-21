@@ -13,6 +13,11 @@ protected function afterSave(): void
 {
     $this->record->syncRoles([$this->data['roles']]);
 }
+    public function mount(int|string $record): void
+    {
+        parent::mount($record);
+        $this->data['roles'] = $this->record->roles->pluck('name')->toArray();
+    }
 
     protected function getHeaderActions(): array
     {

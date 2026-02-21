@@ -15,6 +15,8 @@ class VolunteerRegistration extends Model
         'event_id',
         'event_role_id',
         'user_id',
+        'preference',
+        'remarks',
         'status',
     ];
 
