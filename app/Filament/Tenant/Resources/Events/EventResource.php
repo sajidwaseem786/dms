@@ -9,6 +9,7 @@ use App\Filament\Tenant\Resources\Events\Schemas\EventForm;
 use App\Filament\Tenant\Resources\Events\Tables\EventsTable;
 use App\Models\Event;
 use BackedEnum;
+
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -25,7 +26,7 @@ class EventResource extends Resource
     protected static ?string $recordTitleAttribute = 'Activiteit';
     protected static string|\UnitEnum|null $navigationGroup = 'Planning';
     protected static string|BackedEnum|null $navigationIcon =
-    Heroicon::OutlinedCalendar;
+        Heroicon::OutlinedCalendar;
 
     public static function form(Schema $schema): Schema
     {
@@ -52,4 +53,5 @@ class EventResource extends Resource
             'edit' => EditEvent::route('/{record}/edit'),
         ];
     }
+
 }

@@ -2,17 +2,21 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
+use App\Models\CustomFieldValue;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Event extends Model
 {
     use HasFactory;
 
     protected $connection = 'mysql';
-
+    public function customFieldValues()
+    {
+        return $this->morphMany(CustomFieldValue::class, 'valuable');
+    }
     protected $fillable = [
         'title',
         'description',
