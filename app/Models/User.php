@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\CustomFieldValue;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Filament\Models\Contracts\FilamentUser;
-use Filament\Panel;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser
@@ -33,7 +34,10 @@ class User extends Authenticatable implements FilamentUser
             'password' => 'hashed',
         ];
     }
-
+    public function customFieldValues()
+    {
+        return $this->morphMany(CustomFieldValue::class, 'valuable');
+    }
     public function canAccessPanel(Panel $panel): bool
     {
         \Log::info('canAccessPanel check', [

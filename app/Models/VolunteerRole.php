@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\CustomFieldValue;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class VolunteerRole extends Model
 {
@@ -13,6 +14,10 @@ class VolunteerRole extends Model
     /**
      * Relationship to EventRoles
      */
+    public function customFieldValues()
+    {
+        return $this->morphMany(CustomFieldValue::class, 'valuable');
+    }
     public function eventRoles()
     {
         return $this->hasMany(EventRole::class);
