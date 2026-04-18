@@ -15,11 +15,12 @@ class User extends Authenticatable implements FilamentUser
     use HasFactory, Notifiable, HasRoles;
 
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'role',
-        'email_verified_at'
+        'name', 'first_name', 'last_name', 'gender', 'birth_date',
+        'street', 'house_number', 'postal_code', 'city', 'country',
+        'email', 'password', 'phone', 'iban', 'smoelenboek_description',
+        'big_ehbo', 'big_ehbo_valid_until', 'has_license',
+        'profile_photo', 'status', 'is_admin', 'last_login_at',
+        'email_verified_at',
     ];
 
     protected $hidden = [
@@ -30,8 +31,13 @@ class User extends Authenticatable implements FilamentUser
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'email_verified_at'    => 'datetime',
+            'last_login_at'        => 'datetime',
+            'birth_date'           => 'date',
+            'big_ehbo_valid_until' => 'date',
+            'password'             => 'hashed',
+            'is_admin'             => 'boolean',
+            'has_license'          => 'boolean',
         ];
     }
     public function customFieldValues()
