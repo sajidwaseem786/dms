@@ -16,8 +16,7 @@ class TotaalOverzicht extends Page
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendarDays;
     protected static ?int $navigationSort = 3;
     public ?int $openDropdown = null;
-    public int $dropdownTop = 0;
-    public int $dropdownLeft = 0;
+    protected $listeners = ['closeDropdown'];
     protected string $view = 'filament.tenant.pages.planning.totaal-overzicht';
 
     // Track which event accordion is open
@@ -41,16 +40,16 @@ class TotaalOverzicht extends Page
         }
     }
 
-    public function toggleDropdown(int $eventId, int $top, int $left): void
+    public function toggleDropdown(int $eventId): void
     {
-        if ($this->openDropdown === $eventId) {
-            $this->openDropdown = null;
-        } else {
-            $this->openDropdown = $eventId;
-            $this->dropdownTop  = $top;
-            $this->dropdownLeft = $left;
-        }
+        $this->openDropdown = $this->openDropdown === $eventId ? null : $eventId;
     }
+
+    public function closeDropdown(): void
+    {
+        $this->openDropdown = null;
+    }
+    
     public function setTab(int $eventId, string $tab): void
     {
         $this->activeTabs[$eventId] = $tab;

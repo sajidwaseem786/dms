@@ -4,7 +4,6 @@
     .event-accordion {
         border: 1px solid #e5e7eb;
         border-radius: 6px;
-        /* overflow: hidden; */
     }
     .event-header {
         display: flex;
@@ -67,9 +66,13 @@
     .dropdown-wrapper {
         position: relative;
         flex: 1;
+        display: inline-block; /* ensures clean positioning */
     }
+
     .dropdown-menu {
-        position: fixed;
+        position: absolute;
+        top: 100%;
+        left: 0;
         z-index: 9999;
         background: white;
         border: 1px solid #e5e7eb;
@@ -77,7 +80,9 @@
         box-shadow: 0 4px 16px rgba(0,0,0,0.12);
         min-width: 280px;
         padding: 6px 0;
+        margin-top: 4px;
     }
+
     .dropdown-title {
         background: #ef4444;
         color: white;
@@ -87,11 +92,13 @@
         border-radius: 4px;
         margin: 6px 10px 8px;
     }
+
     .dropdown-divider {
         border: none;
         border-top: 1px solid #e5e7eb;
         margin: 4px 0;
     }
+
     .dropdown-item {
         display: flex;
         align-items: center;
@@ -105,9 +112,17 @@
         width: 100%;
         text-align: left;
     }
+
     .dropdown-item:hover { background: #f9fafb; }
     .dropdown-item.danger { color: #ef4444; }
     .dropdown-item.success { color: #16a34a; }
+
+    /* Flip-up class (used by JS) */
+    .dropdown-menu.flip-up {
+        top: auto;
+        bottom: 100%;
+        margin-bottom: 4px;
+    }
 
     /* Accordion body */
     .accordion-body {
@@ -225,18 +240,12 @@
             {{-- Clickable title with dropdown --}}
             <div class="dropdown-wrapper">
                 <button class="event-title-text"
-                    data-event-id="{{ $event->id }}"
-                    onclick="
-                        var rect = this.getBoundingClientRect();
-                        @this.call('toggleDropdown', {{ $event->id }}, Math.round(rect.bottom + 4), Math.round(rect.left));
-                    ">
+                        wire:click="toggleDropdown({{ $event->id }})">
                     {{ $event->title }}
                 </button>
 
                 @if($dropdownOpen)
-                <div id="dropdown-{{ $event->id }}"
-                    class="dropdown-menu"
-                    style="top: {{ $this->dropdownTop }}px; left: {{ $this->dropdownLeft }}px;">
+                <div id="dropdown-{{ $event->id }}" class="dropdown-menu">
                     <div class="dropdown-title">{{ $event->title }}</div>
                     <hr class="dropdown-divider">
                     <button class="dropdown-item">✏️ Aanpassen</button>
@@ -359,28 +368,56 @@
     <p style="color:#6b7280;font-size:14px;">Geen activiteiten gevonden.</p>
 @endforelse
 
+{{-- Spacer + page info --}}
+<div style="
+    min-height: 260px;
+    padding-top: 24px;
+    border-top: 1px solid #e5e7eb;
+    font-size: 12px;
+    color: #9ca3af;
+">
+    Pagina gegenereerd in {{ number_format(microtime(true) - LARAVEL_START, 5) }} seconden.
+</div>
+
 <script>
-function positionDropdown() {
-    var openMenu = document.querySelector('.dropdown-menu');
-    if (!openMenu) return;
+function adjustDropdown() {
+    const menu = document.querySelector('.dropdown-menu');
+    if (!menu) return;
 
-    var menuId = openMenu.id;
-    var eventId = menuId.replace('dropdown-', '');
-    var btn = document.querySelector('[data-event-id="' + eventId + '"]');
-    if (!btn) return;
+    // Reset to default (below)
+    menu.style.top = '100%';
+    menu.style.bottom = 'auto';
+    menu.classList.remove('flip-up');
 
-    var rect = btn.getBoundingClientRect();
-    openMenu.style.top  = (rect.bottom + 4) + 'px';
-    openMenu.style.left = rect.left + 'px';
+    const rect = menu.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+
+    // If it overflows the bottom of the screen → flip upward
+    if (rect.bottom > viewportHeight + 10) {   // +10px tolerance
+        menu.style.top = 'auto';
+        menu.style.bottom = '100%';
+        menu.classList.add('flip-up');
+    }
 }
 
-// Livewire v3 correct event names
-document.addEventListener('livewire:update', positionDropdown);
-document.addEventListener('livewire:commit', positionDropdown);
+// Run after every Livewire update (when dropdown opens/closes)
+document.addEventListener('livewire:update', adjustDropdown);
+document.addEventListener('livewire:commit', () => setTimeout(adjustDropdown, 30));
 
-// Also try with a small delay as fallback
-document.addEventListener('livewire:update', function() {
-    setTimeout(positionDropdown, 50);
+// Also handle window resize (e.g. mobile orientation change)
+window.addEventListener('resize', adjustDropdown);
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    // If no dropdown is open, do nothing
+    const menu = document.querySelector('.dropdown-menu');
+    if (!menu) return;
+
+    // If the click was inside a dropdown-wrapper, do nothing (Livewire handles it)
+    if (e.target.closest('.dropdown-wrapper')) return;
+
+    // Otherwise, close the dropdown via Livewire
+    Livewire.dispatch('closeDropdown');
 });
 </script>
 
