@@ -27,11 +27,13 @@ class Event extends Model
         'end_time',
         'status',
         'created_by',
+        'reminder_sent',
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'reminder_sent' => 'boolean',
         // Times are stored as strings by default, no need to cast
     ];
     /**

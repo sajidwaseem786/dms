@@ -117,4 +117,10 @@ class User extends Authenticatable implements FilamentUser
             'user_volunteer_role'
         );
     }
+
+    // In app/Models/User.php
+    public function getDisplayNameAttribute(): string
+    {
+        return trim($this->first_name . ' ' . $this->last_name) ?: $this->name;
+    }
 }
