@@ -2,15 +2,16 @@
 
 namespace App\Filament\Tenant\Pages\Planning;
 
+use App\Jobs\SendEventReminderJob;
 use App\Models\Event;
 use App\Models\User;
 use App\Models\VolunteerRegistration;
 use BackedEnum;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -230,6 +231,118 @@ class TotaalOverzicht extends Page
             });
     }
 
+    // ── Send Reminder Action ───────────────────────────────────
+    public function sendReminderAction(): Action
+    {
+        return Action::make('sendReminder')
+            ->label('Reminder versturen')
+            ->modalHeading('Reminder sturen')
+            ->schema([
+                \Filament\Forms\Components\TextInput::make('subject')
+                    ->label('Onderwerp')
+                    ->default(function (): string {
+                        if (!$this->selectedEventId) return '';
+                        $event = Event::find($this->selectedEventId);
+                        if (!$event) return '';
+                        $date = $event->start_date->format('l j F Y');
+                        return "Reminder: {$date} - {$event->title}";
+                    })
+                    ->required(),
+                \Filament\Forms\Components\RichEditor::make('body')
+                    ->label('Bericht')
+                    ->default(function (): string {
+                        if (!$this->selectedEventId) return '';
+                        $event = Event::find($this->selectedEventId);
+                        if (!$event) return '';
+                        $approved = $event->registrations()
+                            ->where('status', 'approved')
+                            ->with('user')
+                            ->get();
+                        $volunteerList = $approved->map(fn($r, $i) =>
+                            ($i + 1) . '. ' . $r->user->display_name
+                        )->join('<br>');
+                        return "
+                            <p>Beste vrijwilligers,</p>
+                            <p>Bedankt voor jullie inschrijving!</p>
+                            <table>
+                                <tr><td>Inschrijving:</td><td>{$event->title}</td></tr>
+                                <tr><td>Datum:</td><td>{$event->start_date->format('Y-m-d')}</td></tr>
+                                <tr><td>Tijd:</td><td>" . substr($event->start_time, 0, 5) . " - " . substr($event->end_time, 0, 5) . "</td></tr>
+                            </table>
+                            <p><strong>Vrijwilligers:</strong><br>{$volunteerList}</p>
+                            <p>Met vriendelijke groet,<br>Het planningsteam</p>
+                        ";
+                    })
+                    ->required()
+                    ->columnSpanFull(),
+            ])
+            ->action(function (array $data): void {
+                if (!$this->selectedEventId) return;
+
+                $event = Event::with(['registrations.user'])->find($this->selectedEventId);
+                if (!$event) return;
+
+                // ✅ Get current tenant ID
+                $tenantId = tenancy()->tenant->getTenantKey();
+
+                $volunteers = $event->registrations->where('status', 'approved');
+                $queuedCount = 0;
+
+                foreach ($volunteers as $registration) {
+                    $user = $registration->user;
+                    if (!$user || !$user->email) continue;
+
+                    // ✅ Pass IDs and tenant, not model instances
+                    SendEventReminderJob::dispatch(
+                        tenantId: $tenantId,
+                        eventId: $event->id,
+                        volunteerId: $user->id,
+                        emailSubject: $data['subject'],
+                        body: $data['body'],
+                    );
+
+                    $queuedCount++;
+                }
+
+                $event->update(['reminder_sent' => true]);
+                $this->openDropdown = null;
+
+                Notification::make()
+                    ->title("Reminder in wachtrij voor {$queuedCount} vrijwilliger(s)")
+                    ->success()
+                    ->send();
+            });
+    }
+
+    // ── Toggle Reminder Status Action ─────────────────────────
+    public function toggleReminderStatusAction(): Action
+    {
+        return Action::make('toggleReminderStatus')
+            ->label('Status reminder wijzigen')
+            ->requiresConfirmation()
+            ->modalHeading(function (): string {
+                if (!$this->selectedEventId) return 'Status wijzigen';
+                $event = Event::find($this->selectedEventId);
+                return 'Status wijzigen naar reminder ' .
+                    ($event?->reminder_sent ? 'NIET verzonden' : 'verzonden') .
+                    ' voor activiteit: ' . ($event?->title ?? '');
+            })
+            ->modalSubmitActionLabel('OK')
+            ->action(function (): void {
+                if (!$this->selectedEventId) return;
+                $event = Event::find($this->selectedEventId);
+                if (!$event) return;
+
+                $event->update(['reminder_sent' => !$event->reminder_sent]);
+                $this->openDropdown = null;
+
+                Notification::make()
+                    ->title('Reminder status bijgewerkt')
+                    ->success()
+                    ->send();
+            });
+    }
+
     public function getEvents(): Collection
     {
         return Event::with([
@@ -275,5 +388,19 @@ class TotaalOverzicht extends Page
         $this->selectedEventId = $eventId;
         $this->openDropdown = null;
         $this->mountAction('cancelVolunteers');
+    }
+
+    public function selectAndSendReminder(int $eventId): void
+    {
+        $this->selectedEventId = $eventId;
+        $this->openDropdown = null;
+        $this->mountAction('sendReminder');
+    }
+
+    public function selectAndToggleReminderStatus(int $eventId): void
+    {
+        $this->selectedEventId = $eventId;
+        $this->openDropdown = null;
+        $this->mountAction('toggleReminderStatus');
     }
 }

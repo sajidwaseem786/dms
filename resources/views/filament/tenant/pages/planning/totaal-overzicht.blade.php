@@ -261,11 +261,13 @@
 
                     <hr class="dropdown-divider">
 
-                    <button class="dropdown-item">
+                    <button class="dropdown-item"
+                            wire:click="selectAndSendReminder({{ $event->id }})">
                         ✉️ Reminder naar vrijwilligers versturen
                     </button>
-                    <button class="dropdown-item">
-                        ✉️ Status reminder NIET verzonden
+                    <button class="dropdown-item"
+                            wire:click="selectAndToggleReminderStatus({{ $event->id }})">
+                        ✉️ Status reminder {{ $event->reminder_sent ? 'NIET verzonden' : 'verzonden' }}
                     </button>
 
                     <hr class="dropdown-divider">
