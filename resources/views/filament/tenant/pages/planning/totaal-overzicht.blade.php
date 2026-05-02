@@ -73,7 +73,7 @@
         position: absolute;
         top: 100%;
         left: 0;
-        z-index: 9999;
+        z-index: 40;
         background: white;
         border: 1px solid #e5e7eb;
         border-radius: 6px;
@@ -248,14 +248,37 @@
                 <div id="dropdown-{{ $event->id }}" class="dropdown-menu">
                     <div class="dropdown-title">{{ $event->title }}</div>
                     <hr class="dropdown-divider">
-                    <button class="dropdown-item">✏️ Aanpassen</button>
-                    <button class="dropdown-item danger">🗑️ Activiteit verwijderen</button>
+
+                    <button class="dropdown-item"
+                            wire:click="selectAndEdit({{ $event->id }})">
+                        ✏️ Aanpassen
+                    </button>
+
+                    <button class="dropdown-item danger"
+                            wire:click="selectAndDelete({{ $event->id }})">
+                        🗑️ Activiteit verwijderen
+                    </button>
+
                     <hr class="dropdown-divider">
-                    <button class="dropdown-item">✉️ Reminder naar vrijwilligers versturen</button>
-                    <button class="dropdown-item">✉️ Status reminder NIET verzonden</button>
+
+                    <button class="dropdown-item">
+                        ✉️ Reminder naar vrijwilligers versturen
+                    </button>
+                    <button class="dropdown-item">
+                        ✉️ Status reminder NIET verzonden
+                    </button>
+
                     <hr class="dropdown-divider">
-                    <button class="dropdown-item success">➕ Vrijwilliger toevoegen</button>
-                    <button class="dropdown-item danger">🚫 Vrijwilligers annuleren</button>
+
+                    <button class="dropdown-item success"
+                            wire:click="selectAndAddVolunteer({{ $event->id }})">
+                        ➕ Vrijwilliger toevoegen
+                    </button>
+
+                    <button class="dropdown-item danger"
+                            wire:click="selectAndCancel({{ $event->id }})">
+                        🚫 Vrijwilligers annuleren
+                    </button>
                 </div>
                 @endif
             </div>
@@ -286,7 +309,9 @@
                     <div>
                         <div class="volunteers-col-header bevestigd">Bevestigd</div>
                         @forelse($approved as $index => $reg)
-                            <div class="volunteer-name">{{ ($index + 1) }}. {{ $reg->user->first_name }} {{ $reg->user->last_name }}</div>
+                            <div class="volunteer-name">
+                                {{ ($index + 1) }}. {{ $reg->user->display_name }}
+                            </div>
                         @empty
                             <span class="empty-dash">-</span>
                         @endforelse
@@ -294,7 +319,9 @@
                     <div>
                         <div class="volunteers-col-header onbevestigd">Onbevestigd</div>
                         @forelse($pending as $reg)
-                            <div class="volunteer-name">{{ $reg->user->first_name }} {{ $reg->user->last_name }}</div>
+                            <div class="volunteer-name">
+                                {{ $reg->user->display_name }}
+                            </div>
                         @empty
                             <span class="empty-dash">-</span>
                         @endforelse
@@ -306,7 +333,9 @@
                     <div>
                         <div class="volunteers-col-header afgezegd">Afgezegd</div>
                         @forelse($rejected as $reg)
-                            <div class="volunteer-name">{{ $reg->user->first_name }} {{ $reg->user->last_name }}</div>
+                            <div class="volunteer-name">
+                                {{ $reg->user->display_name }}
+                            </div>
                         @empty
                             <span class="empty-dash">-</span>
                         @endforelse
@@ -379,6 +408,8 @@
     Pagina gegenereerd in {{ number_format(microtime(true) - LARAVEL_START, 5) }} seconden.
 </div>
 
+<x-filament-actions::modals />
+
 <script>
 function adjustDropdown() {
     const menu = document.querySelector('.dropdown-menu');
@@ -417,6 +448,16 @@ document.addEventListener('click', function(e) {
     if (e.target.closest('.dropdown-wrapper')) return;
 
     // Otherwise, close the dropdown via Livewire
+    Livewire.dispatch('closeDropdown');
+});
+
+// Close dropdown when a Filament modal opens
+document.addEventListener('modal-opened', function() {
+    Livewire.dispatch('closeDropdown');
+});
+
+// Also close on any filament action mount
+document.addEventListener('filament-action-mounted', function() {
     Livewire.dispatch('closeDropdown');
 });
 </script>
