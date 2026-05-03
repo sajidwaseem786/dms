@@ -18,6 +18,8 @@ class VolunteerRegistration extends Model
         'preference',
         'remarks',
         'status',
+        'is_coordinator',
+        'attendance',
     ];
 
     protected $casts = [
