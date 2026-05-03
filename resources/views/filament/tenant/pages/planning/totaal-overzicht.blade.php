@@ -195,6 +195,50 @@
         margin-bottom: 12px;
         color: #111827;
     }
+
+    /* Volunteer dropdown */
+    .volunteer-clickable:hover {
+        color: #2563eb;
+        text-decoration: underline;
+    }
+    .volunteer-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        z-index: 10;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        min-width: 220px;
+        padding: 6px 0;
+        margin-top: 2px;
+    }
+    .vol-dropdown-title {
+        background: #ef4444;
+        color: white;
+        font-weight: 700;
+        font-size: 13px;
+        padding: 6px 12px;
+        border-radius: 4px;
+        margin: 4px 8px 6px;
+    }
+    .vol-dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        font-size: 12px;
+        color: #374151;
+        cursor: pointer;
+        background: none;
+        border: none;
+        width: 100%;
+        text-align: left;
+    }
+    .vol-dropdown-item:hover { background: #f9fafb; }
+    .vol-dropdown-item.danger { color: #ef4444; }
+    .vol-dropdown-item.success { color: #16a34a; }
 </style>
 
 <div class="section-title">Alle activiteiten</div>
@@ -308,40 +352,277 @@
 
                 @if($activeTab === 'vrijwilligers')
                 <div class="volunteers-grid">
+
+                    {{-- Bevestigd --}}
                     <div>
                         <div class="volunteers-col-header bevestigd">Bevestigd</div>
                         @forelse($approved as $index => $reg)
-                            <div class="volunteer-name">
-                                {{ ($index + 1) }}. {{ $reg->user->display_name }}
+                            <div class="volunteer-dropdown-wrapper" style="position:relative;">
+                                <div class="volunteer-name volunteer-clickable"
+                                    wire:click="toggleVolunteerDropdown({{ $reg->id }})"
+                                    style="cursor:pointer; padding: 2px 0;">
+                                    {{ ($index + 1) }}. {{ $reg->user->display_name }}
+                                </div>
+                                @if($this->openVolunteerDropdown === $reg->id)
+                                <div class="volunteer-dropdown">
+                                    <div class="vol-dropdown-title">{{ $reg->user->display_name }}</div>
+                                    <hr class="dropdown-divider">
+
+                                    {{-- Section 1: Status --}}
+                                    <button class="vol-dropdown-item success"
+                                            wire:click="selectAndConfirmVolunteer({{ $reg->id }})">
+                                        ➤ Bevestigen
+                                    </button>
+                                    <button class="vol-dropdown-item danger"
+                                            wire:click="selectAndCancelVolunteer({{ $reg->id }})">
+                                        ✖ Annuleren
+                                    </button>
+                                    <button class="vol-dropdown-item"
+                                            wire:click="selectAndAfzeggenVolunteer({{ $reg->id }})">
+                                        ➖ Afzeggen
+                                    </button>
+                                    <button class="vol-dropdown-item"
+                                            wire:click="unconfirmVolunteer({{ $reg->id }})">
+                                        ↩ On-bevestigen
+                                    </button>
+
+                                    <hr class="dropdown-divider">
+
+                                    {{-- Section 2: Attendance --}}
+                                    <button class="vol-dropdown-item"
+                                            wire:click="confirmAttendance({{ $reg->id }})">
+                                        ⊙ Aanwezigheid bevestigen
+                                    </button>
+                                    <button class="vol-dropdown-item"
+                                            wire:click="confirmAbsence({{ $reg->id }})">
+                                        ○ Afwezigheid bevestigen
+                                    </button>
+                                    <button class="vol-dropdown-item"
+                                            wire:click="cancelAttendance({{ $reg->id }})">
+                                        ● Aan-/afwezigheid annuleren
+                                    </button>
+                                    <button class="vol-dropdown-item danger"
+                                            wire:click="selectAndRemoveVolunteer({{ $reg->id }})">
+                                        🗑 Aanmelding verwijderen
+                                    </button>
+
+                                    <hr class="dropdown-divider">
+
+                                    {{-- Section 3: Coordinator --}}
+                                    <button class="vol-dropdown-item"
+                                            wire:click="makeCoordinator({{ $reg->id }})">
+                                        ☆ Coördinator maken
+                                    </button>
+                                    <button class="vol-dropdown-item"
+                                            wire:click="cancelCoordinator({{ $reg->id }})">
+                                        ★ Coördinator annuleren
+                                    </button>
+
+                                    <hr class="dropdown-divider">
+
+                                    {{-- Section 4: Email --}}
+                                    <button class="vol-dropdown-item"
+                                            wire:click="selectAndEmailVolunteer({{ $reg->id }})">
+                                        ✉ E-mailen
+                                    </button>
+
+                                    <hr class="dropdown-divider">
+
+                                    {{-- Section 5: Edit --}}
+                                    <button class="vol-dropdown-item"
+                                            wire:click="selectAndEditRegistration({{ $reg->id }})">
+                                        ✎ Inschrijving aanpassen
+                                    </button>
+                                </div>
+                                @endif
                             </div>
                         @empty
                             <span class="empty-dash">-</span>
                         @endforelse
                     </div>
+
+                    {{-- Onbevestigd --}}
                     <div>
                         <div class="volunteers-col-header onbevestigd">Onbevestigd</div>
                         @forelse($pending as $reg)
-                            <div class="volunteer-name">
-                                {{ $reg->user->display_name }}
+                            <div class="volunteer-dropdown-wrapper" style="position:relative;">
+                                <div class="volunteer-name volunteer-clickable"
+                                    wire:click="toggleVolunteerDropdown({{ $reg->id }})"
+                                    style="cursor:pointer; padding: 2px 0;">
+                                    {{ $reg->user->display_name }}
+                                </div>
+                                @if($this->openVolunteerDropdown === $reg->id)
+                                <div class="volunteer-dropdown">
+                                    <div class="vol-dropdown-title">{{ $reg->user->display_name }}</div>
+                                    <hr class="dropdown-divider">
+
+                                    {{-- Section 1: Status --}}
+                                    <button class="vol-dropdown-item success"
+                                            wire:click="selectAndConfirmVolunteer({{ $reg->id }})">
+                                        ➤ Bevestigen
+                                    </button>
+                                    <button class="vol-dropdown-item danger"
+                                            wire:click="selectAndCancelVolunteer({{ $reg->id }})">
+                                        ✖ Annuleren
+                                    </button>
+                                    <button class="vol-dropdown-item"
+                                            wire:click="selectAndAfzeggenVolunteer({{ $reg->id }})">
+                                        ➖ Afzeggen
+                                    </button>
+                                    <button class="vol-dropdown-item"
+                                            wire:click="unconfirmVolunteer({{ $reg->id }})">
+                                        ↩ On-bevestigen
+                                    </button>
+
+                                    <hr class="dropdown-divider">
+
+                                    {{-- Section 2: Attendance --}}
+                                    <button class="vol-dropdown-item"
+                                            wire:click="confirmAttendance({{ $reg->id }})">
+                                        ⊙ Aanwezigheid bevestigen
+                                    </button>
+                                    <button class="vol-dropdown-item"
+                                            wire:click="confirmAbsence({{ $reg->id }})">
+                                        ○ Afwezigheid bevestigen
+                                    </button>
+                                    <button class="vol-dropdown-item"
+                                            wire:click="cancelAttendance({{ $reg->id }})">
+                                        ● Aan-/afwezigheid annuleren
+                                    </button>
+                                    <button class="vol-dropdown-item danger"
+                                            wire:click="selectAndRemoveVolunteer({{ $reg->id }})">
+                                        🗑 Aanmelding verwijderen
+                                    </button>
+
+                                    <hr class="dropdown-divider">
+
+                                    {{-- Section 3: Coordinator --}}
+                                    <button class="vol-dropdown-item"
+                                            wire:click="makeCoordinator({{ $reg->id }})">
+                                        ☆ Coördinator maken
+                                    </button>
+                                    <button class="vol-dropdown-item"
+                                            wire:click="cancelCoordinator({{ $reg->id }})">
+                                        ★ Coördinator annuleren
+                                    </button>
+
+                                    <hr class="dropdown-divider">
+
+                                    {{-- Section 4: Email --}}
+                                    <button class="vol-dropdown-item"
+                                            wire:click="selectAndEmailVolunteer({{ $reg->id }})">
+                                        ✉ E-mailen
+                                    </button>
+
+                                    <hr class="dropdown-divider">
+
+                                    {{-- Section 5: Edit --}}
+                                    <button class="vol-dropdown-item"
+                                            wire:click="selectAndEditRegistration({{ $reg->id }})">
+                                        ✎ Inschrijving aanpassen
+                                    </button>
+                                </div>
+                                @endif
                             </div>
                         @empty
                             <span class="empty-dash">-</span>
                         @endforelse
                     </div>
+
+                    {{-- Geannuleerd --}}
                     <div>
                         <div class="volunteers-col-header geannuleerd">Geannuleerd</div>
                         <span class="empty-dash">-</span>
                     </div>
+
+                    {{-- Afgezegd --}}
                     <div>
                         <div class="volunteers-col-header afgezegd">Afgezegd</div>
                         @forelse($rejected as $reg)
-                            <div class="volunteer-name">
-                                {{ $reg->user->display_name }}
+                            <div class="volunteer-dropdown-wrapper" style="position:relative;">
+                                <div class="volunteer-name volunteer-clickable"
+                                    wire:click="toggleVolunteerDropdown({{ $reg->id }})"
+                                    style="cursor:pointer; padding: 2px 0;">
+                                    {{ $reg->user->display_name }}
+                                </div>
+                                @if($this->openVolunteerDropdown === $reg->id)
+                                <div class="volunteer-dropdown">
+                                    <div class="vol-dropdown-title">{{ $reg->user->display_name }}</div>
+                                    <hr class="dropdown-divider">
+
+                                    {{-- Section 1: Status --}}
+                                    <button class="vol-dropdown-item success"
+                                            wire:click="selectAndConfirmVolunteer({{ $reg->id }})">
+                                        ➤ Bevestigen
+                                    </button>
+                                    <button class="vol-dropdown-item danger"
+                                            wire:click="selectAndCancelVolunteer({{ $reg->id }})">
+                                        ✖ Annuleren
+                                    </button>
+                                    <button class="vol-dropdown-item"
+                                            wire:click="selectAndAfzeggenVolunteer({{ $reg->id }})">
+                                        ➖ Afzeggen
+                                    </button>
+                                    <button class="vol-dropdown-item"
+                                            wire:click="unconfirmVolunteer({{ $reg->id }})">
+                                        ↩ On-bevestigen
+                                    </button>
+
+                                    <hr class="dropdown-divider">
+
+                                    {{-- Section 2: Attendance --}}
+                                    <button class="vol-dropdown-item"
+                                            wire:click="confirmAttendance({{ $reg->id }})">
+                                        ⊙ Aanwezigheid bevestigen
+                                    </button>
+                                    <button class="vol-dropdown-item"
+                                            wire:click="confirmAbsence({{ $reg->id }})">
+                                        ○ Afwezigheid bevestigen
+                                    </button>
+                                    <button class="vol-dropdown-item"
+                                            wire:click="cancelAttendance({{ $reg->id }})">
+                                        ● Aan-/afwezigheid annuleren
+                                    </button>
+                                    <button class="vol-dropdown-item danger"
+                                            wire:click="selectAndRemoveVolunteer({{ $reg->id }})">
+                                        🗑 Aanmelding verwijderen
+                                    </button>
+
+                                    <hr class="dropdown-divider">
+
+                                    {{-- Section 3: Coordinator --}}
+                                    <button class="vol-dropdown-item"
+                                            wire:click="makeCoordinator({{ $reg->id }})">
+                                        ☆ Coördinator maken
+                                    </button>
+                                    <button class="vol-dropdown-item"
+                                            wire:click="cancelCoordinator({{ $reg->id }})">
+                                        ★ Coördinator annuleren
+                                    </button>
+
+                                    <hr class="dropdown-divider">
+
+                                    {{-- Section 4: Email --}}
+                                    <button class="vol-dropdown-item"
+                                            wire:click="selectAndEmailVolunteer({{ $reg->id }})">
+                                        ✉ E-mailen
+                                    </button>
+
+                                    <hr class="dropdown-divider">
+
+                                    {{-- Section 5: Edit --}}
+                                    <button class="vol-dropdown-item"
+                                            wire:click="selectAndEditRegistration({{ $reg->id }})">
+                                        ✎ Inschrijving aanpassen
+                                    </button>
+                                </div>
+                                @endif
                             </div>
                         @empty
                             <span class="empty-dash">-</span>
                         @endforelse
                     </div>
+
                 </div>
                 @endif
 
@@ -413,55 +694,51 @@
 <x-filament-actions::modals />
 
 <script>
-function adjustDropdown() {
-    const menu = document.querySelector('.dropdown-menu');
-    if (!menu) return;
-
-    // Reset to default (below)
-    menu.style.top = '100%';
-    menu.style.bottom = 'auto';
-    menu.classList.remove('flip-up');
-
-    const rect = menu.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-
-    // If it overflows the bottom of the screen → flip upward
-    if (rect.bottom > viewportHeight + 10) {   // +10px tolerance
-        menu.style.top = 'auto';
-        menu.style.bottom = '100%';
-        menu.classList.add('flip-up');
-    }
+function closeAllDropdowns() {
+    Livewire.dispatch('closeDropdown');
+    Livewire.dispatch('closeVolunteerDropdown');
 }
 
-// Run after every Livewire update (when dropdown opens/closes)
-document.addEventListener('livewire:update', adjustDropdown);
-document.addEventListener('livewire:commit', () => setTimeout(adjustDropdown, 30));
-
-// Also handle window resize (e.g. mobile orientation change)
-window.addEventListener('resize', adjustDropdown);
-
-// Close dropdown when clicking outside
+// Close when clicking outside
 document.addEventListener('click', function(e) {
-    // If no dropdown is open, do nothing
-    const menu = document.querySelector('.dropdown-menu');
-    if (!menu) return;
-
-    // If the click was inside a dropdown-wrapper, do nothing (Livewire handles it)
-    if (e.target.closest('.dropdown-wrapper')) return;
-
-    // Otherwise, close the dropdown via Livewire
-    Livewire.dispatch('closeDropdown');
+    if (!e.target.closest('.dropdown-wrapper') && 
+        !e.target.closest('.volunteer-dropdown-wrapper')) {
+        closeAllDropdowns();
+    }
 });
 
-// Close dropdown when a Filament modal opens
-document.addEventListener('modal-opened', function() {
-    Livewire.dispatch('closeDropdown');
+// Stronger modal detection
+function handleModalOpen() {
+    closeAllDropdowns();
+    
+    // Extra safety: hide all custom dropdowns via CSS
+    document.querySelectorAll('.volunteer-dropdown, .dropdown-menu').forEach(el => {
+        el.style.display = 'none';
+    });
+}
+
+// Multiple ways to detect modal opening
+document.addEventListener('filament:modal-opened', handleModalOpen);
+document.addEventListener('modal-opened', handleModalOpen);
+document.addEventListener('filament-action-mounted', handleModalOpen);
+
+// Livewire update hook
+document.addEventListener('livewire:update', function() {
+    setTimeout(() => {
+        if (document.querySelector('.fi-modal') || document.querySelector('[role="dialog"]')) {
+            handleModalOpen();
+        }
+    }, 30);
 });
 
-// Also close on any filament action mount
-document.addEventListener('filament-action-mounted', function() {
-    Livewire.dispatch('closeDropdown');
+// Also hide dropdowns when any Filament modal is visible
+const observer = new MutationObserver(() => {
+    if (document.querySelector('.fi-modal')) {
+        handleModalOpen();
+    }
 });
+
+observer.observe(document.body, { childList: true, subtree: true });
 </script>
 
 </x-filament-panels::page>
